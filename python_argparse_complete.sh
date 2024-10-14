@@ -55,13 +55,80 @@ _python_script_autocomplete() {
 
     # Extract arguments from the script's --help output
     # Exclude the '--help' argument from the suggestions
-    local args=$($python_interpreter "$script" --help 2>/dev/null | \
-                 grep -oE "(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9_-])" | \
-                 sort -u)
+    help_output=$($python_interpreter "$script" --help 2>/dev/null)
+    local args=$(echo "$help_output" | \
+        grep -oE "(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9_-])" | \
+        sort -u)
+
+    # Extract the options section from the help output
+    options_lines=$(echo "$help_output" | sed -n '/^options:/,/^[[:space:]]*$/p')
+
+    # Initialize an associative array to store arguments and their choices
+    declare -A arg_choices
+
+    # Process each line in the options section
+    while IFS= read -r line; do
+        # Remove leading and trailing whitespace
+        line=$(echo "$line" | sed 's/^[ \t]*//;s/[ \t]*$//')
+        # Skip empty lines or lines that don't start with '-'
+        [[ -z "$line" || "${line:0:1}" != "-" ]] && continue
+
+        # Split the line into option part and description based on two or more spaces
+        option_part=$(echo "$line" | awk -F '[[:space:]]{2,}' '{print $1}')
+        # Remove leading and trailing whitespace from option_part
+        option_part=$(echo "$option_part" | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+        # Initialize rest as option_part
+        rest="$option_part"
+        # Loop to extract options
+        while [[ -n "$rest" ]]; do
+            # Remove leading commas and spaces
+            rest="${rest#,}"
+            rest="${rest# }"
+            rest="${rest#	}"  # Remove leading tabs too
+
+            if [[ "$rest" =~ ^(-{1,2}[^\ ]+)(\ \{[^\}]+\})?(.*)$ ]]; then
+                option="${BASH_REMATCH[1]}"
+                choices="${BASH_REMATCH[2]}"
+                rest="${BASH_REMATCH[3]}"
+
+                # Remove leading spaces from rest
+                rest="${rest# }"
+                rest="${rest#	}"
+
+                # Remove choices braces if present
+                if [[ -n "$choices" ]]; then
+                    choices="${choices# \{}"
+                    choices="${choices%\}}"
+                    IFS=',' read -ra choices_array <<< "$choices"
+                    # Trim whitespace from choices
+                    for i in "${!choices_array[@]}"; do
+                        choices_array[$i]=$(echo "${choices_array[$i]}" | xargs)
+                    done
+                else
+                    choices_array=()
+                fi
+
+                # Store option and choices in the associative array
+                arg_choices["$option"]="${choices_array[*]}"
+            else
+                # No match, break the loop
+                break
+            fi
+        done
+    done <<< "$options_lines"
 
     # If the command failed or no arguments were found, fallback to default completion
     if [[ -z "$args" ]]; then
         _filedir
+        return
+    fi
+
+
+    # If previous word is an argument that accepts choices, suggest choices
+    if [[ -n "${arg_choices[$prev]}" ]]; then
+        local choices="${arg_choices[$prev]}"
+        COMPREPLY=($(compgen -W "$choices" -- "$cur"))
         return
     fi
 
@@ -77,8 +144,7 @@ _python_script_autocomplete() {
     for used_arg in "${used_args[@]}"; do
         args=$(echo "$args" | grep -v "^${used_arg}$")
     done
-
-    # Provide completion suggestions
+    # Suggest arguments
     COMPREPLY=($(compgen -W "$args" -- "$cur"))
 }
 
