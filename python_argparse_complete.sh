@@ -8,7 +8,18 @@ _python_script_autocomplete() {
     fi
 
     local cur prev words cword
-    _init_completion -n "=" || return
+    _init_completion || return
+
+    # Determine the Python interpreter to use
+    local python_interpreter
+    if command -v python3 >/dev/null 2>&1; then
+        python_interpreter=python3
+    elif command -v python >/dev/null 2>&1; then
+        python_interpreter=python
+    else
+        # No Python interpreter found
+        return
+    fi
 
     # Check if we're in a valid Python script execution context
     local is_python_script=false
@@ -29,10 +40,9 @@ _python_script_autocomplete() {
 
     # Get the script name
     local script="${words[script_index]}"
-    local script_path=$(command -v "$script" || echo "$script")
 
     # Check if the script exists and is readable
-    if [[ ! -f "$script_path" || ! -r "$script_path" ]]; then
+    if [[ ! -f "$script" || ! -r "$script" ]]; then
         _filedir
         return
     fi
@@ -43,15 +53,33 @@ _python_script_autocomplete() {
         return
     fi
 
-    # If the current word starts with '-', complete with script arguments
-    if [[ $cur == -* ]]; then
-        # Extract arguments from the script's --help output
-        local args=$(python3 "$script_path" --help 2>/dev/null | grep -oE "(--[a-zA-Z0-9_-]+)|(-[a-zA-Z0-9_-])")
-        COMPREPLY=($(compgen -W "$args" -- "$cur"))
-    else
-        # For non-dash arguments, use default completion
+    # Extract arguments from the script's --help output
+    # Exclude the '--help' argument from the suggestions
+    local args=$($python_interpreter "$script" --help 2>/dev/null | \
+                 grep -oE "(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9_-])" | \
+                 sort -u)
+
+    # If the command failed or no arguments were found, fallback to default completion
+    if [[ -z "$args" ]]; then
         _filedir
+        return
     fi
+
+    # Exclude arguments that have already been used
+    local used_args=("--help" "-h")
+    for ((i=script_index+1; i<${#words[@]}; i++)); do
+        if [[ "${words[i]}" == -* ]]; then
+            used_args+=("${words[i]}")
+        fi
+    done
+
+    # Remove used arguments from args
+    for used_arg in "${used_args[@]}"; do
+        args=$(echo "$args" | grep -v "^${used_arg}$")
+    done
+
+    # Provide completion suggestions
+    COMPREPLY=($(compgen -W "$args" -- "$cur"))
 }
 
 complete -F _python_script_autocomplete python
