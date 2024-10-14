@@ -5,10 +5,15 @@ _python_script_autocomplete() {
         _filedir() {
             compgen -f -- "$cur"
         }
+        local cur prev words cword
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+        words=("${COMP_WORDS[@]}")
+        cword=$COMP_CWORD
+    else
+        local cur prev words cword
+        _init_completion || return
     fi
-
-    local cur prev words cword
-    _init_completion || return
 
     # Determine the Python interpreter to use
     local python_interpreter
