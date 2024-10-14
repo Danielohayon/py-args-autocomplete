@@ -1,11 +1,14 @@
 #!/bin/bash
 
 _python_script_autocomplete() {
+    if ! declare -F _filedir >/dev/null; then
+        _filedir() {
+            compgen -f -- "$cur"
+        }
+    fi
+
     local cur prev words cword
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    words=("${COMP_WORDS[@]}")
-    cword=$COMP_CWORD
+    _init_completion -n "=" || return
 
     # Check if we're in a valid Python script execution context
     local is_python_script=false
@@ -19,16 +22,17 @@ _python_script_autocomplete() {
     done
 
     # If not in a Python script context, use default completion
-    if ! $is_python_script; then
+    if [ "$is_python_script" != "true" ]; then
         _filedir
         return
     fi
 
     # Get the script name
     local script="${words[script_index]}"
+    local script_path=$(command -v "$script" || echo "$script")
 
     # Check if the script exists and is readable
-    if [[ ! -f "$script" || ! -r "$script" ]]; then
+    if [[ ! -f "$script_path" || ! -r "$script_path" ]]; then
         _filedir
         return
     fi
@@ -41,11 +45,9 @@ _python_script_autocomplete() {
 
     # If the current word starts with '-', complete with script arguments
     if [[ $cur == -* ]]; then
-        # Extract arguments from the script
-        local args=$(python3 "$script" --help 2>/dev/null | grep -oE "(--[a-zA-Z0-9_-]+)|(-[a-zA-Z0-9_-])")
+        # Extract arguments from the script's --help output
+        local args=$(python3 "$script_path" --help 2>/dev/null | grep -oE "(--[a-zA-Z0-9_-]+)|(-[a-zA-Z0-9_-])")
         COMPREPLY=($(compgen -W "$args" -- "$cur"))
-        # local args=$(grep -oP "(?<=add_argument\().*?(?=\))" "$script" | grep -oP "('--\w+)|('-\w')" | tr -d "'")
-        # COMPREPLY=($(compgen -W "$args" -- "$cur"))
     else
         # For non-dash arguments, use default completion
         _filedir
