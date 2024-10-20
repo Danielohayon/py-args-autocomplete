@@ -137,6 +137,6 @@ _python_script_autocomplete() {
     COMPREPLY=($(compgen -W "$args" -- "$cur"))
 }
 
-complete -o default -o bashdefault -o nospace -F _python_script_autocomplete python
-complete -o default -o bashdefault -o nospace -F _python_script_autocomplete python3
+complete -o default -o bashdefault -F _python_script_autocomplete python
+complete -o default -o bashdefault -F _python_script_autocomplete python3
 
