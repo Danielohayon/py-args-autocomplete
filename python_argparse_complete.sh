@@ -34,7 +34,7 @@ _python_script_autocomplete() {
         return 124
     fi
 
-    # If we're still completing the script name or earlier parts, use default completion
+    # If we're still completing the script name or earlier parts, use default completion. For example:
     # python <cursor> sample_script.py --arg1 --arg2 |-> And a tab press
     if [[ $cword -le $script_index ]]; then
         COMPREPLY=()
@@ -147,6 +147,7 @@ _python_script_autocomplete() {
     COMPREPLY=($(compgen -W "$args" -- "$cur"))
 }
 
+#Bind the autocomplete function to python and python3 commands
 complete -o default -o bashdefault -F _python_script_autocomplete python
 complete -o default -o bashdefault -F _python_script_autocomplete python3
 
