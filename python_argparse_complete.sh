@@ -1,30 +1,12 @@
 #!/bin/bash
 
 _python_script_autocomplete() {
-    if ! declare -F _filedir >/dev/null; then
-        _filedir() {
-            compgen -f -- "$cur"
-        }
-        local cur prev words cword
-        cur="${COMP_WORDS[COMP_CWORD]}"
-        prev="${COMP_WORDS[COMP_CWORD-1]}"
-        words=("${COMP_WORDS[@]}")
-        cword=$COMP_CWORD
-    else
-        local cur prev words cword
-        _init_completion || return
-    fi
-
-    # Determine the Python interpreter to use
-    local python_interpreter
-    if command -v python3 >/dev/null 2>&1; then
-        python_interpreter=python3
-    elif command -v python >/dev/null 2>&1; then
-        python_interpreter=python
-    else
-        # No Python interpreter found
-        return
-    fi
+    local cur prev words cword
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    words=("${COMP_WORDS[@]}")
+    cword=$COMP_CWORD
 
     # Check if we're in a valid Python script execution context
     local is_python_script=false
@@ -39,8 +21,8 @@ _python_script_autocomplete() {
 
     # If not in a Python script context, use default completion
     if [ "$is_python_script" != "true" ]; then
-        _filedir
-        return
+        COMPREPLY=()
+        return 124  # Use 124 to tell Bash to use default completion
     fi
 
     # Get the script name
@@ -48,25 +30,27 @@ _python_script_autocomplete() {
 
     # Check if the script exists and is readable
     if [[ ! -f "$script" || ! -r "$script" ]]; then
-        _filedir
-        return
+        COMPREPLY=()
+        return 124
     fi
 
     # If we're still completing the script name or earlier parts, use default completion
     if [[ $cword -le $script_index ]]; then
-        _filedir
-        return
+        COMPREPLY=()
+        return 124
     fi
 
+    # Determine the Python interpreter (python or python3)
+    local python_interpreter="${words[0]}"
+
     # Extract arguments from the script's --help output
-    # Exclude the '--help' argument from the suggestions
     help_output=$($python_interpreter "$script" --help 2>/dev/null)
     local args=$(echo "$help_output" | \
         grep -oE "(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9_-])" | \
         sort -u)
 
     # Extract the options section from the help output
-    options_lines=$(echo "$help_output" | sed -n '/^options:/,/^[[:space:]]*$/p')
+    options_lines=$(echo "$help_output" | sed -n '/^options:/I,/^[[:space:]]*$/p')
 
     # Initialize an associative array to store arguments and their choices
     declare -A arg_choices
@@ -123,12 +107,11 @@ _python_script_autocomplete() {
         done
     done <<< "$options_lines"
 
-    # If the command failed or no arguments were found, fallback to default completion
+    # If the command failed or no arguments were found, fallback to filename completion
     if [[ -z "$args" ]]; then
-        _filedir
-        return
+        COMPREPLY=()
+        return 124
     fi
-
 
     # If previous word is an argument that accepts choices, suggest choices
     if [[ -n "${arg_choices[$prev]}" ]]; then
@@ -149,10 +132,11 @@ _python_script_autocomplete() {
     for used_arg in "${used_args[@]}"; do
         args=$(echo "$args" | grep -v "^${used_arg}$")
     done
+
     # Suggest arguments
     COMPREPLY=($(compgen -W "$args" -- "$cur"))
 }
 
-complete -F _python_script_autocomplete python
-complete -F _python_script_autocomplete python3
+complete -o default -o bashdefault -o nospace -F _python_script_autocomplete python
+complete -o default -o bashdefault -o nospace -F _python_script_autocomplete python3
 
