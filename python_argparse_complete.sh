@@ -35,13 +35,23 @@ _python_script_autocomplete() {
     fi
 
     # If we're still completing the script name or earlier parts, use default completion
+    # python <cursor> sample_script.py --arg1 --arg2 |-> And a tab press
     if [[ $cword -le $script_index ]]; then
         COMPREPLY=()
         return 124
     fi
 
     # Determine the Python interpreter (python or python3)
-    local python_interpreter="${words[0]}"
+    local python_interpreter
+    if command -v python3 &>/dev/null; then
+        python_interpreter='python3'
+    elif command -v python &>/dev/null; then
+        python_interpreter='python'
+    else
+        # No Python interpreter found
+        COMPREPLY=()
+        return 124
+    fi
 
     # Extract arguments from the script's --help output
     help_output=$($python_interpreter "$script" --help 2>/dev/null)
