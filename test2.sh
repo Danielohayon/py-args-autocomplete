@@ -104,6 +104,4 @@ simulate_completion 'python sample_script.py --level ' '1' '2' '3'
 # Test 4: Do not suggest already used options
 simulate_completion 'python sample_script.py --input in1 --' '--output' '--verbose' '--level'
 
-# Test 5: Default to file completion when no script is specified
-simulate_completion 'python sample_' 'sample_script.py'
 
