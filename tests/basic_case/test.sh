@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Source the autocompletion script
-source ./python_argparse_complete.sh
+source ../../src/python_argparse_complete.sh
 
 # Source bash-completion if available
 if [ -f /usr/share/bash-completion/bash_completion ]; then
