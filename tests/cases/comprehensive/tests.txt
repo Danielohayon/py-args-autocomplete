@@ -1,0 +1,30 @@
+# Basic argument completion tests
+# Long options only
+python comprehensive.py --|--string --integer --float --color --level --verbose --quiet --mode --verbosity --files --optional-files --exact-files --optional-arg --required 
+
+# Both short and long options
+python comprehensive.py -|--string --integer --float --color --level --verbose --quiet --mode --verbosity --files --optional-files --exact-files --optional-arg --required  -v
+
+# Test after partially typed argument
+python comprehensive.py --str|--string
+python comprehensive.py --verb|--verbose --verbosity
+
+# Test choices completion
+python comprehensive.py --color |red blue green
+python comprehensive.py --level |1 2 3
+
+# Test after choosing from choices (long options only)
+python comprehensive.py --color red --|--string --integer --float --level --verbose --quiet --mode --verbosity --files --optional-files --exact-files --optional-arg --required 
+
+# Test exact number of arguments (long options only)
+python comprehensive.py --exact-files file1.txt file2.txt --|--string --integer --float --color --level --verbose --quiet --mode --verbosity --files --optional-files --optional-arg --required 
+
+# Test required argument handling (long options only)
+python comprehensive.py --required value --|--string --integer --float --color --level --verbose --quiet --mode --verbosity --files --optional-files --exact-files --optional-arg
+
+# Test short options
+# Should not suggest -v as it's already used
+python comprehensive.py -v|
+# These should not suggest anything as they're not valid option starts
+python comprehensive.py -vv|
+python comprehensive.py -vvv|
