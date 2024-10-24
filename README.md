@@ -10,6 +10,7 @@
 * [x] Unify testing code
 * [ ] Beif up testing to be more extensive and robust with long argument names and help messages
 * [x] Add support for dual option arguments, such as cases where `-c` and `--config` are both the same argument so if one has been used then don't suggest the other again.
+* [x] Fix issue of needing to autocomplete path after an argument, now only autocomplete arguments after `-` or `--` or after an argument that has choices.
 * [ ] Beif up README page with examples and some documentation
 * [ ] Add support for libraries that are initiated without the Python keyword (for example film, lm_eval, etc.)
 * [ ] Add support for positional arguments and sub-parsers

@@ -141,25 +141,33 @@ _python_script_autocomplete() {
         return
     fi
 
-    # Initialize array for used arguments and their aliases
-    local used_args=("--help" "-h")
-    for ((i=script_index+1; i<${#words[@]}; i++)); do
-        if [[ "${words[i]}" == -* ]]; then
-            used_args+=("${words[i]}")
-            # If this argument has an alias, add it to used_args
-            if [[ -n "${arg_aliases[${words[i]}]}" ]]; then
-                used_args+=("${arg_aliases[${words[i]}]}")
+    # Check if we're explicitly looking for arguments (current word starts with - or ends with -)
+    if [[ "$cur" == -* ]] || [[ "$cur" == *- ]]; then
+        # Initialize array for used arguments and their aliases
+        local used_args=("--help" "-h")
+        for ((i=script_index+1; i<${#words[@]}; i++)); do
+            if [[ "${words[i]}" == -* ]]; then
+                used_args+=("${words[i]}")
+                # If this argument has an alias, add it to used_args
+                if [[ -n "${arg_aliases[${words[i]}]}" ]]; then
+                    used_args+=("${arg_aliases[${words[i]}]}")
+                fi
             fi
-        fi
-    done
+        done
 
-    # Remove used arguments from args
-    for used_arg in "${used_args[@]}"; do
-        args=$(echo "$args" | grep -v "^${used_arg}$")
-    done
+        # Remove used arguments from args
+        for used_arg in "${used_args[@]}"; do
+            args=$(echo "$args" | grep -v "^${used_arg}$")
+        done
 
-    # Suggest arguments
-    COMPREPLY=($(compgen -W "$args" -- "$cur"))
+        # Suggest arguments
+        COMPREPLY=($(compgen -W "$args" -- "$cur"))
+        return
+    fi
+
+    # Default to normal bash completion for everything else
+    COMPREPLY=()
+    return 124
 }
 
 # Bind the autocomplete function to python and python3 commands
