@@ -1,4 +1,3 @@
-
 # py-args-autocomplete
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,9 +7,12 @@
 ## 🚀 Features
 
 - **Intelligent Autocompletion:** Automatically suggests arguments based on your Python script's `--help` output.
-- **Choice Suggestions:** If an argument accepts specific choices, those are suggested during completion.
-- **Supports Short and Long Options:** Completes both short (`-h`) and long (`--help`) options.
-- **Fallback to Default Completion:** If not in a Python script context, it defaults to Bash's standard completion.
+- **Choice Suggestions:** If an argument accepts specific choices (e.g., --format {json,yaml,text}), those specific options are automatically suggested.
+- **Context-Aware Completion:**
+    - Typing -- or - triggers argument suggestions
+    - Keeps normal filesystem completion for argument values (paths, files, etc.)
+    - Smart filtering to hide already used arguments
+- **Zero Configuration:** Works out of the box with any Python script that supports --help, regardless of the argument parsing library used.
 
 ## 📥 Installation
 
