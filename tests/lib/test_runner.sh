@@ -20,31 +20,42 @@ NC='\033[0m' # No Color
 
 # Function to simulate autocompletion
 simulate_completion() {
-    local cmdline="$1"
-    shift
+    local case_dir="$1"
+    local cmdline="$2"
+    shift 2
     local expected_completions=("$@")
 
-    # Convert relative paths to absolute paths in the command line
-    local modified_cmdline="${cmdline/python sample_scripts/python $PROJECT_ROOT/tests/sample_scripts}"
+    # Get the Python script path
+    local script_name="$(basename "$case_dir").py"
+    local script_path="$case_dir/$script_name"
+
+    # Build the modified command line by replacing the script name with the full path
+    local script_base_name="$(basename "$script_path")"
+    local modified_cmdline="${cmdline/$script_base_name/$script_path}"
 
     # Determine if there's a trailing space
     local trailing_space=0
     [[ "$modified_cmdline" == *" " ]] && trailing_space=1
 
-    # Split the command line into words
-    IFS=' ' read -r -a COMP_WORDS <<< "$modified_cmdline"
-
+    # Split the command line into words, preserving spaces
+    read -ra COMP_WORDS <<< "$modified_cmdline"
+    
     # If there's a trailing space, add an empty word
     [ $trailing_space -eq 1 ] && COMP_WORDS+=("")
 
-    # Set COMP_CWORD to the index of the current word
-    COMP_CWORD=${#COMP_WORDS[@]}
-    ((COMP_CWORD--))
+    # Set COMP_CWORD to the index of the last word
+    COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
 
-    # Set cur and prev
+    # Get the current word being completed
     local cur="${COMP_WORDS[COMP_CWORD]}"
+    
+    # Get the previous word
     local prev
-    [ $COMP_CWORD -ge 1 ] && prev="${COMP_WORDS[COMP_CWORD-1]}" || prev=""
+    if [ $COMP_CWORD -ge 1 ]; then
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+    else
+        prev=""
+    fi
 
     # Set COMP_LINE and COMP_POINT
     COMP_LINE="$modified_cmdline"
@@ -61,8 +72,9 @@ simulate_completion() {
 
     # Debug output
     echo "Debug info:"
+    echo "Original command line: $cmdline"
     echo "Modified command line: $modified_cmdline"
-    echo "COMP_WORDS: ${COMP_WORDS[*]}"
+    echo "COMP_WORDS (${#COMP_WORDS[@]}): ${COMP_WORDS[*]}"
     echo "COMP_CWORD: $COMP_CWORD"
     echo "cur: '$cur'"
     echo "prev: '$prev'"
@@ -103,10 +115,13 @@ simulate_completion() {
 
 # Function to run a single test case
 run_test_case() {
-    local test_file="$1"
+    local case_dir="$1"
+    local test_file="$case_dir/tests.txt"
     local total_tests=0
     local passed_tests=0
 
+    echo "Running tests from: $test_file"
+    
     while IFS='|' read -r command_line expected_completions || [ -n "$command_line" ]; do
         # Skip empty lines and comments
         [[ -z "$command_line" || "$command_line" =~ ^[[:space:]]*# ]] && continue
@@ -115,14 +130,14 @@ run_test_case() {
         IFS=' ' read -r -a completion_array <<< "$expected_completions"
 
         # Run the test
-        if simulate_completion "$command_line" "${completion_array[@]}"; then
+        if simulate_completion "$case_dir" "$command_line" "${completion_array[@]}"; then
             ((passed_tests++))
         fi
         ((total_tests++))
         echo "----------------------------------------"
     done < "$test_file"
 
-    echo "Results for $test_file:"
+    echo "Results for $(basename "$case_dir"):"
     echo "Passed: $passed_tests/$total_tests tests"
     return $((total_tests - passed_tests))
 }

@@ -1,0 +1,3 @@
+
+python dual_option_argument.py --|--input --output --verbose --level --config
+

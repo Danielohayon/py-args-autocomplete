@@ -1,0 +1,5 @@
+
+python basic_case.py --|--input --output --verbose --level
+python basic_case.py --input |in1 in2
+python basic_case.py --level |1 2 3
+python basic_case.py --input in1 --|--output --verbose --level
