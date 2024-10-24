@@ -1,0 +1,26 @@
+# Test file completion for single file argument
+python file_autocomplete.py --input-file |file1.txt file2.txt file3.txt config.json data.json file_autocomplete.py tests.txt subdir
+
+# Test file completion with partial filename
+python file_autocomplete.py --input-file file|file1.txt file2.txt file3.txt file_autocomplete.py
+
+# Test .txt file completion with partial name
+python file_autocomplete.py --input-file file1|file1.txt
+
+# Test .json file completion
+python file_autocomplete.py --output-file con|config.json
+
+# Test multiple values
+python file_autocomplete.py --multiple-files |file1.txt file2.txt file3.txt config.json data.json file_autocomplete.py tests.txt subdir
+
+# Test multiple values after one file
+python file_autocomplete.py --multiple-files file1.txt |file1.txt file2.txt file3.txt config.json data.json file_autocomplete.py tests.txt subdir
+
+# Test directory completion
+python file_autocomplete.py --input-file sub|subdir
+
+# Test normal argument completion
+python file_autocomplete.py --|--input-file --output-file --multiple-files --type
+
+# Test choices after --type
+python file_autocomplete.py --type |txt json

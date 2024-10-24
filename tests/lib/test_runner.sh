@@ -25,13 +25,17 @@ simulate_completion() {
     shift 2
     local expected_completions=("$@")
 
-    # Get the Python script path
-    local script_name="$(basename "$case_dir").py"
-    local script_path="$case_dir/$script_name"
+    # Save current directory
+    local original_dir=$(pwd)
+    
+    # Change to the test case directory for file completion
+    cd "$case_dir" || exit 1
 
-    # Build the modified command line by replacing the script name with the full path
-    local script_base_name="$(basename "$script_path")"
-    local modified_cmdline="${cmdline/$script_base_name/$script_path}"
+    # Get the Python script name
+    local script_name="$(basename "$case_dir").py"
+
+    # Build the modified command line using relative paths
+    local modified_cmdline="python ./$script_name${cmdline#*$script_name}"
 
     # Determine if there's a trailing space
     local trailing_space=0
@@ -64,70 +68,84 @@ simulate_completion() {
     # Initialize COMPREPLY
     COMPREPLY=()
 
-    # Call the autocompletion function
+    # Call the autocompletion function and capture its return code
     _python_script_autocomplete
+    local completion_status=$?
 
-    # Capture the completion suggestions
-    local completions=("${COMPREPLY[@]}")
+    # If return code is 124, it means we should use default bash completion
+    if [ $completion_status -eq 124 ]; then
+        # Get completions using compgen for files in the current directory
+        if [[ -n "$cur" ]]; then
+            COMPREPLY=($(compgen -f -- "$cur"))
+        else
+            COMPREPLY=($(compgen -f))
+        fi
+    fi
 
-    # Prepare debug info (but don't print it yet)
+    # Prepare debug info
     local debug_info="Debug info:
-Original command line: $cmdline
+Working directory: $(pwd)
 Modified command line: $modified_cmdline
-COMP_WORDS (${#COMP_WORDS[@]}): ${COMP_WORDS[*]}
+COMP_WORDS: ${COMP_WORDS[*]}
 COMP_CWORD: $COMP_CWORD
 cur: '$cur'
 prev: '$prev'
-COMP_LINE: $COMP_LINE
-COMP_POINT: $COMP_POINT
-Expected completions: ${expected_completions[*]}
-Actual completions: ${completions[*]}"
+Completion status: $completion_status
+Files in directory: $(ls)"
 
-    # Verify the completions
-    local test_failed=false
+    # Verify the completions while still in the correct directory
+    local test_failed=0  # Use 0 for success, 1 for failure
+    local sorted_completions=($(printf '%s\n' "${COMPREPLY[@]}" | sort))
+    local sorted_expected=($(printf '%s\n' "${expected_completions[@]}" | sort))
 
     # Check for missing expected completions
-    for expected in "${expected_completions[@]}"; do
-        if [[ ! " ${completions[*]} " =~ " $expected " ]]; then
-            test_failed=true
+    for expected in "${sorted_expected[@]}"; do
+        if [[ ! " ${sorted_completions[*]} " =~ " $expected " ]]; then
+            test_failed=1
             break
         fi
     done
 
     # Check for unexpected completions
-    for completion in "${completions[@]}"; do
-        if [[ ! " ${expected_completions[*]} " =~ " $completion " ]]; then
-            test_failed=true
+    for completion in "${sorted_completions[@]}"; do
+        if [[ ! " ${sorted_expected[*]} " =~ " $completion " ]]; then
+            test_failed=1
             break
         fi
     done
 
-    if [ "$test_failed" = false ]; then
-        # For successful tests, just print a green checkmark and the command
-        echo -e "${GREEN}✅ $cmdline | ${expected_completions[@]}${NC}"
-        return 0
+    # Store the result before changing directory
+    local test_output
+    if [ "$test_failed" -eq 0 ]; then
+        test_output="${GREEN}✅ $cmdline|${sorted_expected[@]}${NC}"
     else
-        # For failed tests, print all debug info
-        echo "$debug_info"
-        echo "Test failed for: '$cmdline'"
+        test_output="$debug_info
+Testing completion for: '$cmdline'
+Expected completions: ${sorted_expected[*]}
+Actual completions: ${sorted_completions[*]}"
         
-        # Print missing completions
-        for expected in "${expected_completions[@]}"; do
-            if [[ ! " ${completions[*]} " =~ " $expected " ]]; then
-                echo -e "${RED}❌ Missing expected completion: $expected${NC}"
+        for expected in "${sorted_expected[@]}"; do
+            if [[ ! " ${sorted_completions[*]} " =~ " $expected " ]]; then
+                test_output+=$'\n'"${RED}❌ Missing expected completion: $expected${NC}"
             fi
         done
 
-        # Print unexpected completions
-        for completion in "${completions[@]}"; do
-            if [[ ! " ${expected_completions[*]} " =~ " $completion " ]]; then
-                echo -e "${RED}❌ Unexpected completion: $completion${NC}"
+        for completion in "${sorted_completions[@]}"; do
+            if [[ ! " ${sorted_expected[*]} " =~ " $completion " ]]; then
+                test_output+=$'\n'"${RED}❌ Unexpected completion: $completion${NC}"
             fi
         done
         
-        echo -e "${RED}❌ Test failed.${NC}"
-        return 1
+        test_output+=$'\n'"${RED}❌ Test failed.${NC}"
     fi
+
+    # Change back to original directory
+    cd "$original_dir"
+
+    # Print the stored output
+    echo -e "$test_output"
+
+    return $test_failed
 }
 
 # Function to run a single test case
@@ -148,8 +166,6 @@ run_test_case() {
         # Run the test
         if simulate_completion "$case_dir" "$command_line" "${completion_array[@]}"; then
             ((passed_tests++))
-        else
-            echo "----------------------------------------"
         fi
         ((total_tests++))
     done < "$test_file"
@@ -157,7 +173,9 @@ run_test_case() {
     echo "Results for $case_name:"
     echo "Passed: $passed_tests/$total_tests tests"
     echo "----------------------------------------"
-    return $((total_tests - passed_tests))
+    
+    # Return 0 if all tests passed, 1 otherwise
+    [ "$passed_tests" -eq "$total_tests" ]
 }
 
 # Export functions so they can be used by other scripts
