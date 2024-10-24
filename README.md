@@ -1,6 +1,5 @@
 # py-args-autocomplete - It Just Works
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 `py-args-autocomplete` is a tool that provides autocompletion for arguments of any Python script. Unlike other solutions, this tool doesn't require you to modify your Python code or install additional Python packages. It works seamlessly by parsing your script's `--help` output, making it universally compatible with scripts using any argument parsing library.
 
@@ -120,11 +119,9 @@ We welcome contributions! Here's how you can help:
 1. Check out the [Project page](https://github.com/users/Danielohayon/projects/1) for open features or suggest your own ideas.
 2. Fork the repository
 3. Create a feature branch
-4. Submit a pull request
-
-### Development Setup
-1. Clone the repository
-3. Run tests before submitting PR
+4. Write tests for your feature
+5. Before submitting PR, run the test suite as mentioned in [🧪 Testing](#-testing) to make sure no other features have been broken.
+6. Submit a pull request
 
 ## 📄 License
 
