@@ -14,10 +14,9 @@
 
 ## 📥 Installation
 
-> [!Quick Install]
-> Clone the repo into a folder of your choosing `git clone https://github.com/Danielohayon/py-args-autocomplete.git`
-> Add this line to your `~/.bashrc` file `source /path/to/cloned/repo/src/python_argparse_complete.sh`
-> Reload Your Shell `source ~/.bashrc`
+1. Clone the repo into a folder of your choosing `git clone https://github.com/Danielohayon/py-args-autocomplete.git`
+2. Add this line to your `~/.bashrc` file `source /path/to/cloned/repo/src/python_argparse_complete.sh`
+3. Reload Your Shell `source ~/.bashrc`
 
 
 
