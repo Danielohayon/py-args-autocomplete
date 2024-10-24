@@ -1,9 +1,18 @@
 # py-args-autocomplete - It Just Works
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-`py-args-autocomplete` is a tool that provides autocompletion for arguments of any Python script. Unlike other solutions, this tool doesn't require you to modify your Python code or install additional Python packages. It works seamlessly by parsing your script's `--help` output, making it universally compatible with scripts using any argument parsing library.
+## Why?
+Ever found yourself typing `python script.py --output` and freezing... *"Was it --output_path or --output_base_path? Or maybe just --output?"* 😅
+
+We've all been there: hastily hitting Ctrl+C, running `python script.py --help`, only to realize your carefully crafted command is now lost to the bash history void. And of course, the moment you see the help output, you remember you also needed to set `--num-workers`.
+
+Say goodbye to that workflow! With `py-args-autocomplete`, just hit Tab and watch the magic happen. No more context-switching, no more lost commands, just smooth sailing through your Python arguments. ✨
+
+
 
 ## 🚀 Features
+
+`py-args-autocomplete` is a tool that provides autocompletion for arguments of any Python script. Unlike other solutions, this tool doesn't require you to modify your Python code or install additional Python packages. It works seamlessly by parsing your script's `--help` output, making it universally compatible with scripts using any argument parsing library.
 
 - **Zero Configuration:** Works out of the box with any Python script that supports `--help`, regardless of the argument parsing library used.
 - **Choice Suggestions:** If an argument accepts specific choices (e.g., `--format {json,yaml,text}`), those specific options are automatically suggested.
