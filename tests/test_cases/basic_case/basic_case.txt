@@ -1,0 +1,11 @@
+# Test initial argument suggestions
+python sample_scripts/basic_case.py --|--input --output --verbose --level
+
+# Test input argument choices
+python sample_scripts/basic_case.py --input |in1 in2
+
+# Test level argument choices
+python sample_scripts/basic_case.py --level |1 2 3
+
+# Test that used arguments are not suggested again
+python sample_scripts/basic_case.py --input in1 --|--output --verbose --level
