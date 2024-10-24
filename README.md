@@ -6,8 +6,7 @@ Ever found yourself typing `python script.py --output` and freezing... *"Was it 
 
 We've all been there: hastily hitting Ctrl+C, running `python script.py --help`, only to realize your carefully crafted command is now lost to the bash history void. And of course, the moment you see the help output, you remember you also needed to set `--num-workers`.
 
-Say goodbye to that workflow! With `py-args-autocomplete`, just hit Tab and watch the magic happen. No more context-switching, no more lost commands, just smooth sailing through your Python arguments. ✨
-
+Say goodbye to that workflow! With `py-args-autocomplete`, just hit Tab and watch the magic happen. 
 
 
 ## 🚀 Features
