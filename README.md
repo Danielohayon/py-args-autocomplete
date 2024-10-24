@@ -5,5 +5,7 @@
 
 
 # Roadmap
+* Add support for dual option arguments, such as cases where `-c` and `--config` are both the same argument so if one has been used then don't suggest the other again.
+* Add support for positional arguments and subparsers
 * Add zsh support 
 * Add support for libraries that are initiated without the python keyword (for example vllm, lm_eval, ect)
