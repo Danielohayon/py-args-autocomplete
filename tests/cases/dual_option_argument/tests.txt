@@ -1,3 +1,14 @@
 
 python dual_option_argument.py --|--input --output --verbose --level --config
-
+python dual_option_argument.py -|--input --output --verbose --level --config -c
+python dual_option_argument.py --config in1 -|--input --output --verbose --level
+python dual_option_argument.py -c in1 --|--input --output --verbose --level
+python dual_option_argument.py --config |in1 in2 in3
+python dual_option_argument.py -c |in1 in2 in3
+python dual_option_argument.py --input in1 --|--output --verbose --level --config
+python dual_option_argument.py --input in1 -c in2 --|--output --verbose --level
+python dual_option_argument.py --input in1 -c in2 --verbose --|--output --level
+python dual_option_argument.py -c in1 --input |in1 in2
+python dual_option_argument.py --config in1 --level |1 2 3
+python dual_option_argument.py --input in1 --output out.txt --verbose --level 1 -c in2 --|
+python dual_option_argument.py --con|--config
