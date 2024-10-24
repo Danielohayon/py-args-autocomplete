@@ -34,8 +34,7 @@ _python_script_autocomplete() {
         return 124
     fi
 
-    # If we're still completing the script name or earlier parts, use default completion. For example:
-    # python <cursor> sample_script.py --arg1 --arg2 |-> And a tab press
+    # If we're still completing the script name or earlier parts, use default completion
     if [[ $cword -le $script_index ]]; then
         COMPREPLY=()
         return 124
@@ -55,15 +54,13 @@ _python_script_autocomplete() {
 
     # Extract arguments from the script's --help output
     help_output=$($python_interpreter "$script" --help 2>/dev/null)
-    local args=$(echo "$help_output" | \
-        grep -oE "(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9_-])" | \
-        sort -u)
 
     # Extract the options section from the help output
     options_lines=$(echo "$help_output" | sed -n '/^options:/I,/^[[:space:]]*$/p')
 
-    # Initialize an associative array to store arguments and their choices
+    # Initialize associative arrays
     declare -A arg_choices
+    declare -A arg_aliases  # New array to store argument aliases
 
     # Process each line in the options section
     while IFS= read -r line; do
@@ -79,12 +76,13 @@ _python_script_autocomplete() {
 
         # Initialize rest as option_part
         rest="$option_part"
-        # Loop to extract options
+        local first_option=""
+        # Loop to extract options and store aliases
         while [[ -n "$rest" ]]; do
             # Remove leading commas and spaces
             rest="${rest#,}"
             rest="${rest# }"
-            rest="${rest#	}"  # Remove leading tabs too
+            rest="${rest#	}"
 
             if [[ "$rest" =~ ^(-{1,2}[^\ ]+)(\ \{[^\}]+\})?(.*)$ ]]; then
                 option="${BASH_REMATCH[1]}"
@@ -94,6 +92,14 @@ _python_script_autocomplete() {
                 # Remove leading spaces from rest
                 rest="${rest# }"
                 rest="${rest#	}"
+
+                # Store alias relationships
+                if [[ -z "$first_option" ]]; then
+                    first_option="$option"
+                else
+                    arg_aliases["$option"]="$first_option"
+                    arg_aliases["$first_option"]="$option"
+                fi
 
                 # Remove choices braces if present
                 if [[ -n "$choices" ]]; then
@@ -117,6 +123,11 @@ _python_script_autocomplete() {
         done
     done <<< "$options_lines"
 
+    # Extract all possible arguments
+    local args=$(echo "$help_output" | \
+        grep -oE "(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9_-])" | \
+        sort -u)
+
     # If the command failed or no arguments were found, fallback to filename completion
     if [[ -z "$args" ]]; then
         COMPREPLY=()
@@ -130,11 +141,15 @@ _python_script_autocomplete() {
         return
     fi
 
-    # Exclude arguments that have already been used
+    # Initialize array for used arguments and their aliases
     local used_args=("--help" "-h")
     for ((i=script_index+1; i<${#words[@]}; i++)); do
         if [[ "${words[i]}" == -* ]]; then
             used_args+=("${words[i]}")
+            # If this argument has an alias, add it to used_args
+            if [[ -n "${arg_aliases[${words[i]}]}" ]]; then
+                used_args+=("${arg_aliases[${words[i]}]}")
+            fi
         fi
     done
 
@@ -147,7 +162,7 @@ _python_script_autocomplete() {
     COMPREPLY=($(compgen -W "$args" -- "$cur"))
 }
 
-#Bind the autocomplete function to python and python3 commands
+# Bind the autocomplete function to python and python3 commands
 complete -o default -o bashdefault -F _python_script_autocomplete python
 complete -o default -o bashdefault -F _python_script_autocomplete python3
 
