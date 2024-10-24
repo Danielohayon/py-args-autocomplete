@@ -10,17 +10,17 @@
 * [ ] Beif up testing to be more extensive and robust with long argument names and help messages
 * [ ] Unify testing code
 * [x] Add support for dual option arguments, such as cases where `-c` and `--config` are both the same argument so if one has been used then don't suggest the other again.
-* [ ] Add support for positional arguments and sub-parsers
 * [ ] Beif up README page with examples and some documentation
-* [ ] Add zsh support 
-* [ ] Add integration with popular CLI frameworks (click, typer)
 * [ ] Add support for libraries that are initiated without the Python keyword (for example film, lm_eval, etc.)
+* [ ] Add support for positional arguments and sub-parsers
+* [ ] Add integration with popular CLI frameworks (click, typer)
+* [ ] Add zsh support 
 * [ ] Package as a package for ease of installation with `apt` and `brew` for example.
 * [ ] Add performance benchmarks
 * [ ] Add extensive documentation
 * [ ] Add caching to optimization
-* [ ] fuzzy matching
 
 
 ## tbd
 * [ ] Add support for other languages (js)?
+* [ ] fuzzy matching?
