@@ -5,8 +5,8 @@
 
 
 ## Roadmap
-* [ ] Add support for default bash autocomplete fallback when argument suggestion is irrelevant (such as when still typing the script name)
-* [ ] Add support for suggesting options for an argument after it has been typed. For example after typing `python script.py --type <tab>` it would suggest the listed options for the type argument
+* [x] Add support for default bash autocomplete fallback when argument suggestion is irrelevant (such as when still typing the script name)
+* [x] Add support for suggesting options for an argument after it has been typed. For example after typing `python script.py --type <tab>` it would suggest the listed options for the type argument
 * [ ] Beif up testing to be more extensive and robust with long argument names and help messages
 * [ ] Unify testing code
 * [ ] Add support for dual option arguments, such as cases where `-c` and `--config` are both the same argument so if one has been used then don't suggest the other again.
