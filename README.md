@@ -2,7 +2,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Why?
-Ever found yourself typing `python script.py --output` and freezing... *"Was it --output_path or --output_base_path? Or maybe just --output?"* 😅
+Ever found yourself typing `python script.py --output` and freezing... *"Was it `--output_path` or `--output_base_path`? Or maybe just `--output`?"* 😅
 
 We've all been there: hastily hitting Ctrl+C, running `python script.py --help`, only to realize your carefully crafted command is now lost to the bash history void. And of course, the moment you see the help output, you remember you also needed to set `--num-workers`.
 
