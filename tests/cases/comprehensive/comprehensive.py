@@ -4,7 +4,14 @@ def main():
     parser = argparse.ArgumentParser(description='A comprehensive test script for argument parsing.')
     
     # Basic arguments with different types
-    parser.add_argument('--string', type=str, help='String argument')
+    parser.add_argument('--string', type=str, help='''This option has a very long help message intended to test the parsing capabilities
+    when dealing with long descriptions. The help message goes on and on, talking about various aspects of the option,
+    when dealing with long descriptions. The help message goes on and on, talking about various aspects of the option,
+    when dealing with long descriptions. The help message goes on and on, talking about various aspects of the option,
+    its usage, examples, edge cases, and any other relevant information that might be useful for the user to know.
+    its usage, examples, edge cases, and any other relevant information that might be useful for the user to know.
+    its usage, examples, edge cases, and any other relevant information that might be useful for the user to know.
+    It should be properly parsed and displayed without causing any issues.''')
     parser.add_argument('--integer', type=int, help='Integer argument')
     parser.add_argument('--float', type=float, help='Float argument')
     
