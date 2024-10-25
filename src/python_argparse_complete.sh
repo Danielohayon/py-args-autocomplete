@@ -237,6 +237,12 @@ detect_venv_commands() {
     local count=0
     echo "Scanning for Python entry points in: $venv_path/$bin_dir"
     
+    # Check if file command exists
+    local has_file_command=false
+    if command -v file >/dev/null 2>&1; then
+        has_file_command=true
+    fi
+    
     # Find all executable files in the bin directory
     while IFS= read -r -d '' file; do
         # Skip python, python3, pip, etc.
@@ -247,8 +253,12 @@ detect_venv_commands() {
 
         # Check if file is a script (has shebang with python)
         if [ -f "$file" ] && [ -x "$file" ]; then
-            # Check first line for python shebang
-            if head -n 1 "$file" | grep -q "python" || file "$file" | grep -q "Python script"; then
+            # First try to check shebang
+            if head -n 1 "$file" | grep -q "python"; then
+                register_python_command "$(basename "$file")"
+                ((count++))
+            # If no python in shebang and file command exists, try that
+            elif [ "$has_file_command" = true ] && file "$file" | grep -q "Python script"; then
                 register_python_command "$(basename "$file")"
                 ((count++))
             fi
