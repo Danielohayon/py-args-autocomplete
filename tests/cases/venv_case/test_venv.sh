@@ -9,7 +9,7 @@ NC='\033[0m' # No Color
 # Function to print colored output
 log_success() { echo -e "${GREEN}✅ $1${NC}"; }
 log_error() { echo -e "${RED}❌ $1${NC}"; }
-log_info() { echo -e "${YELLOW}💭 $1${NC}"; }
+log_info() { echo -e "${NC}[LOG]: $1${NC}"; }
 
 # Function to clean up test environment
 cleanup() {
