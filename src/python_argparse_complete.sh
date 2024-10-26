@@ -247,7 +247,7 @@ detect_venv_commands() {
     while IFS= read -r -d '' file; do
         # Skip python, python3, pip, etc.
         local basename=$(basename "$file")
-        if [[ "$basename" =~ ^(python|python3|pip|pip3|activate|easy_install|wheel)$ ]]; then
+        if [[ "$basename" =~ ^(python|python3|activate|easy_install|wheel)$ ]]; then
             continue
         fi
 
