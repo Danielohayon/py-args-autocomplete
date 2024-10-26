@@ -303,10 +303,12 @@ bind_completions() {
 # Initial binding of completions
 bind_completions
 
-# Provide a help message
-echo "Python argument autocompletion loaded!"
-echo "Available commands:"
-echo "  detect_venv_commands [venv_path] - Detect and register Python entry points from a virtualenv"
-echo "  register_python_command <command> - Manually register a command for autocompletion"
-echo "  list_registered_commands - List all registered commands"
+if [ "$1" == "--DEBUG" ]; then
+    # provide a help message
+    echo "Python argument autocompletion loaded!"
+    echo "Available commands:"
+    echo "  detect_venv_commands [venv_path] - Detect and register Python entry points from a virtualenv"
+    echo "  register_python_command <command> - Manually register a command for autocompletion"
+    echo "  list_registered_commands - List all registered commands"
+fi
 
