@@ -25,6 +25,18 @@ _python_script_autocomplete() {
         return 124
     fi
 
+    # Determine the Python interpreter (python or python3)
+    local python_interpreter
+    if command -v python3 &>/dev/null; then
+        python_interpreter='python3'
+    elif command -v python &>/dev/null; then
+        python_interpreter='python'
+    else
+        # No Python interpreter found
+        COMPREPLY=()
+        return 124
+    fi
+
     # For python/python3 commands, we need to look for .py files
     local is_python_interpreter=false
     local script_index=1
@@ -69,7 +81,7 @@ _python_script_autocomplete() {
     # Get help output based on command type
     local help_output
     if [ "$is_python_interpreter" = true ]; then
-        help_output=$("$command" "$script" --help 2>/dev/null)
+        help_output=$("$python_interpreter" "$script" --help 2>/dev/null)
     else
         help_output=$("$command" --help 2>/dev/null)
     fi
