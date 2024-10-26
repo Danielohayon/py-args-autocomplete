@@ -8,34 +8,19 @@ _python_script_autocomplete() {
     words=("${COMP_WORDS[@]}")
     cword=$COMP_CWORD
 
-    # Check if we're in a valid Python script execution context
-    local is_python_script=false
-    local script_index=-1
-    for ((i=1; i<${#words[@]}; i++)); do
-        if [[ "${words[i]}" == *.py ]]; then
-            is_python_script=true
-            script_index=$i
+    # Get the command (first word)
+    local command="${words[0]}"
+    
+    # Check if this is a registered command
+    local is_registered=false
+    for cmd in "${REGISTERED_COMMANDS[@]}"; do
+        if [[ "$command" == "$cmd" ]]; then
+            is_registered=true
             break
         fi
     done
 
-    # If not in a Python script context, use default completion
-    if [ "$is_python_script" != "true" ]; then
-        COMPREPLY=()
-        return 124  # Use 124 to tell Bash to use default completion
-    fi
-
-    # Get the script name
-    local script="${words[script_index]}"
-
-    # Check if the script exists and is readable
-    if [[ ! -f "$script" || ! -r "$script" ]]; then
-        COMPREPLY=()
-        return 124
-    fi
-
-    # If we're still completing the script name or earlier parts, use default completion
-    if [[ $cword -le $script_index ]]; then
+    if [ "$is_registered" != "true" ]; then
         COMPREPLY=()
         return 124
     fi
@@ -52,18 +37,65 @@ _python_script_autocomplete() {
         return 124
     fi
 
-    # Extract arguments from the script's --help output
-    help_output=$($python_interpreter "$script" --help 2>/dev/null)
+    # For python/python3 commands, we need to look for .py files
+    local is_python_interpreter=false
+    local script_index=1
+    if [[ "$command" == "python" || "$command" == "python3" ]]; then
+        is_python_interpreter=true
+        # Check for .py file
+        local is_python_script=false
+        for ((i=1; i<${#words[@]}; i++)); do
+            if [[ "${words[i]}" == *.py ]]; then
+                is_python_script=true
+                script_index=$i
+                break
+            fi
+        done
+
+        # If not in a Python script context, use default completion
+        if [ "$is_python_script" != "true" ]; then
+            COMPREPLY=()
+            return 124
+        fi
+    fi
+
+    # Get the script or command to execute
+    local script
+    if [ "$is_python_interpreter" = true ]; then
+        script="${words[script_index]}"
+        # Check if the script exists and is readable
+        if [[ ! -f "$script" || ! -r "$script" ]]; then
+            COMPREPLY=()
+            return 124
+        fi
+    else
+        script="$command"
+    fi
+
+    # If we're still completing the script name or earlier parts, use default completion
+    if [ "$is_python_interpreter" = true ] && [[ $cword -le $script_index ]]; then
+        COMPREPLY=()
+        return 124
+    fi
+
+    # Get help output based on command type
+    local help_output
+    if [ "$is_python_interpreter" = true ]; then
+        help_output=$("$python_interpreter" "$script" --help 2>/dev/null)
+    else
+        help_output=$("$command" --help 2>/dev/null)
+    fi
 
     # Extract the options section from the help output
     options_lines=$(echo "$help_output" | sed -n '/^options:/I,/^[[:space:]]*$/p')
 
     # Initialize associative arrays
     declare -A arg_choices
-    declare -A arg_aliases  # New array to store argument aliases
+    declare -A arg_aliases
 
     # Process each line in the options section
     while IFS= read -r line; do
+        # [Rest of the existing option processing code remains the same]
         # Remove leading and trailing whitespace
         line=$(echo "$line" | sed 's/^[ \t]*//;s/[ \t]*$//')
         # Skip empty lines or lines that don't start with '-'
@@ -123,6 +155,7 @@ _python_script_autocomplete() {
         done
     done <<< "$options_lines"
 
+    # [Rest of the existing completion logic remains the same]
     # Extract all possible arguments
     local args=$(echo "$help_output" | \
         grep -oE "(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9_-])" | \
@@ -141,11 +174,18 @@ _python_script_autocomplete() {
         return
     fi
 
-    # Check if we're explicitly looking for arguments (current word starts with - or ends with -)
+    # Check if we're explicitly looking for arguments
     if [[ "$cur" == -* ]] || [[ "$cur" == *- ]]; then
         # Initialize array for used arguments and their aliases
         local used_args=("--help" "-h")
-        for ((i=script_index+1; i<${#words[@]}; i++)); do
+        local start_index
+        if [ "$is_python_interpreter" = true ]; then
+            start_index=$script_index
+        else
+            start_index=1
+        fi
+        
+        for ((i=start_index+1; i<${#words[@]}; i++)); do
             if [[ "${words[i]}" == -* ]]; then
                 used_args+=("${words[i]}")
                 # If this argument has an alias, add it to used_args
@@ -169,8 +209,118 @@ _python_script_autocomplete() {
     COMPREPLY=()
     return 124
 }
+# Array to store registered commands
+declare -a REGISTERED_COMMANDS=("python" "python3")
 
-# Bind the autocomplete function to python and python3 commands
-complete -o default -o bashdefault -F _python_script_autocomplete python
-complete -o default -o bashdefault -F _python_script_autocomplete python3
+# Function to detect Python entry points in a virtual environment
+detect_venv_commands() {
+    local venv_path="$1"
+    
+    # If no path provided, try to detect active venv
+    if [ -z "$venv_path" ]; then
+        if [ -n "$VIRTUAL_ENV" ]; then
+            venv_path="$VIRTUAL_ENV"
+        else
+            echo "No virtual environment path provided and no active virtual environment detected."
+            return 1
+        fi
+    fi
+
+    # Determine the bin directory based on OS
+    local bin_dir
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+        bin_dir="Scripts"
+    else
+        bin_dir="bin"
+    fi
+
+    # Check if the venv path exists
+    if [ ! -d "$venv_path" ]; then
+        echo "Virtual environment directory not found: $venv_path"
+        return 1
+    fi
+
+    # Check if the bin directory exists
+    if [ ! -d "$venv_path/$bin_dir" ]; then
+        echo "Bin directory not found in virtual environment: $venv_path/$bin_dir"
+        return 1
+    fi
+
+    local count=0
+    echo "Scanning for Python entry points in: $venv_path/$bin_dir"
+    
+    # Check if file command exists
+    local has_file_command=false
+    if command -v file >/dev/null 2>&1; then
+        has_file_command=true
+    fi
+    
+    # Find all executable files in the bin directory
+    while IFS= read -r -d '' file; do
+        # Skip python, python3, pip, etc.
+        local basename=$(basename "$file")
+        if [[ "$basename" =~ ^(python|python3|activate|easy_install|wheel)$ ]]; then
+            continue
+        fi
+
+        # Check if file is a script (has shebang with python)
+        if [ -f "$file" ] && [ -x "$file" ]; then
+            # First try to check shebang
+            if head -n 1 "$file" | grep -q "python"; then
+                register_python_command "$(basename "$file")"
+                ((count++))
+            # If no python in shebang and file command exists, try that
+            elif [ "$has_file_command" = true ] && file "$file" | grep -q "Python script"; then
+                register_python_command "$(basename "$file")"
+                ((count++))
+            fi
+        fi
+    done < <(find "$venv_path/$bin_dir" -type f -executable -print0)
+
+    echo "Registered $count new Python entry points for autocompletion"
+    
+    # Rebind completion for all commands
+    bind_completions
+}
+
+# Function to register a new command for autocompletion
+register_python_command() {
+    local command="$1"
+    # Check if command already exists in REGISTERED_COMMANDS
+    for cmd in "${REGISTERED_COMMANDS[@]}"; do
+        if [[ "$cmd" == "$command" ]]; then
+            return
+        fi
+    done
+    REGISTERED_COMMANDS+=("$command")
+    echo "Registered new command: $command"
+}
+
+# Function to list all registered commands
+list_registered_commands() {
+    echo "Currently registered commands for argument autocompletion:"
+    printf '%s\n' "${REGISTERED_COMMANDS[@]}" | sort
+}
+
+# Function to bind completions for all registered commands
+bind_completions() {
+    for cmd in "${REGISTERED_COMMANDS[@]}"; do
+        complete -o default -o bashdefault -F _python_script_autocomplete "$cmd"
+    done
+}
+
+# Rest of the _python_script_autocomplete function remains the same as in the previous version
+# [Previous _python_script_autocomplete function code goes here]
+
+# Initial binding of completions
+bind_completions
+
+if [ "$1" == "--DEBUG" ]; then
+    # provide a help message
+    echo "Python argument autocompletion loaded!"
+    echo "Available commands:"
+    echo "  detect_venv_commands [venv_path] - Detect and register Python entry points from a virtualenv"
+    echo "  register_python_command <command> - Manually register a command for autocompletion"
+    echo "  list_registered_commands - List all registered commands"
+fi
 
